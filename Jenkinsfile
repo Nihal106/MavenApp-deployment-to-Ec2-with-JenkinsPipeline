@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven-3.9'
+        maven 'Maven'
         jdk 'JDK17'
     }
 
@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/bhuvan-raj/MavenApp-deployment-to-Ec2-with-JenkinsPipeline.git'
+                    url: 'https://github.com/Nihal106/MavenApp-deployment-to-Ec2-with-JenkinsPipeline.git'
             }
         }
 
@@ -23,12 +23,12 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sshagent(['ec2-ssh-key']) {
+                sshagent(['ssh-keypair-for-test']) {
                     sh '''
                         echo "Copying artifact to EC2..."
                         scp -o StrictHostKeyChecking=no \
                             target/demo-1.0.0.jar \
-                            ubuntu@34.224.84.252:/opt/app/
+                            ubuntu@13.217.50.23:/opt/app/
 
                         echo "Starting application on EC2..."
                         ssh -o StrictHostKeyChecking=no ubuntu@34.224.84.252 << 'EOF'
