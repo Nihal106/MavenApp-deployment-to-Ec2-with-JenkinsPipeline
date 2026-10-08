@@ -21,27 +21,30 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
-            steps {
-                sshagent(['ssh-keypair-for-test']) {
-                    sh '''
-                        echo "Copying artifact to EC2..."
-                        scp -o StrictHostKeyChecking=no \
-                            target/demo-1.0.0.jar \
-                            ubuntu@13.217.50.23:/opt/app/
+stage('Deploy to EC2') {
+    steps {
+        sshagent(['ssh-keypair-for-test']) {
+            sh '''
+                echo "Copying artifact to EC2..."
 
-                        echo "Starting application on EC2..."
-                        ssh -o StrictHostKeyChecking=no ubuntu@34.224.84.252 << 'EOF'
-                            pkill -f demo-1.0.0.jar || true
-                            nohup java -jar /opt/app/demo-1.0.0.jar \
-                                > /opt/app/app.log 2>&1 &
-                        EOF
+                scp -o StrictHostKeyChecking=no \
+                    target/demo-1.0.0.jar \
+                    ubuntu@13.217.50.23:/opt/app/
 
-                        echo "Deployment command executed successfully"
-                    '''
-                }
-            }
+                echo "Starting application on EC2..."
+
+                ssh -o StrictHostKeyChecking=no ubuntu@13.217.50.23 << 'EOF'
+                    pkill -f demo-1.0.0.jar || true
+
+                    nohup java -jar /opt/app/demo-1.0.0.jar \
+                        > /opt/app/app.log 2>&1 &
+                EOF
+
+                echo "Deployment command executed successfully"
+            '''
         }
+    }
+}
     }
 
     post {
