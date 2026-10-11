@@ -22,39 +22,64 @@ pipeline {
         }
 
 
+
 stage('Deploy to EC2') {
-    environment {
-        EC2_HOST = '100.24.57.121'
-    }
     steps {
         sshagent(['ssh-ubuntu']) {
             sh '''
                 set -e
 
-                echo "Copying artifact to EC2..."
+                HOST="ubuntu@100.24.57.121"
+                JAR="target/demo-1.0.0.jar"
 
-                ssh -o StrictHostKeyChecking=no \
-                    ubuntu@$EC2_HOST \
+                echo "1. Checking SSH connection..."
+                ssh -o BatchMode=yes \
+                    -o StrictHostKeyChecking=no \
+                    "$HOST" 'echo SSH connection successful'
+
+                echo "2. Preparing application directory..."
+                ssh "$HOST" \
                     'sudo mkdir -p /opt/app &&
                      sudo chown ubuntu:ubuntu /opt/app'
 
+                echo "3. Copying JAR..."
                 scp -o StrictHostKeyChecking=no \
-                    target/demo-1.0.0.jar \
-                    ubuntu@$EC2_HOST:/opt/app/
+                    "$JAR" "$HOST:/opt/app/"
 
-                echo "Starting application on EC2..."
+                echo "4. Restarting Spring Boot..."
+                ssh -o StrictHostKeyChecking=no "$HOST" \
+                    'bash -s' <<'REMOTE'
+set -e
 
-                ssh -o StrictHostKeyChecking=no \
-                    ubuntu@$EC2_HOST \
-                    'pkill -f "[d]emo-1.0.0.jar" || true
-                     nohup java -jar /opt/app/demo-1.0.0.jar \
-                       > /opt/app/app.log 2>&1 < /dev/null &'
+cd /opt/app
 
-                echo "Deployment commands completed."
+# Stop the previous application if present.
+if pgrep -f '[d]emo-1.0.0.jar' >/dev/null; then
+    pkill -f '[d]emo-1.0.0.jar' || true
+    sleep 2
+fi
+
+# Start the new version.
+nohup java -jar /opt/app/demo-1.0.0.jar \
+    > /opt/app/app.log 2>&1 < /dev/null &
+
+sleep 5
+
+if ! pgrep -f '[d]emo-1.0.0.jar' >/dev/null; then
+    echo "Application failed to remain running."
+    tail -n 50 /opt/app/app.log
+    exit 1
+fi
+
+echo "Application process is running."
+REMOTE
+
+                echo "5. Deployment completed successfully."
             '''
         }
     }
 }
+
 
     }
 
