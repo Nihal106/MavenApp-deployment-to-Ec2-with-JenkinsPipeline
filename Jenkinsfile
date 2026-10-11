@@ -21,30 +21,41 @@ pipeline {
             }
         }
 
+
 stage('Deploy to EC2') {
+    environment {
+        EC2_HOST = '100.24.57.121'
+    }
     steps {
         sshagent(['ssh-ubuntu']) {
             sh '''
+                set -e
+
                 echo "Copying artifact to EC2..."
+
+                ssh -o StrictHostKeyChecking=no \
+                    ubuntu@$EC2_HOST \
+                    'sudo mkdir -p /opt/app &&
+                     sudo chown ubuntu:ubuntu /opt/app'
 
                 scp -o StrictHostKeyChecking=no \
                     target/demo-1.0.0.jar \
-                    ubuntu@100.24.57.121:/opt/app/
+                    ubuntu@$EC2_HOST:/opt/app/
 
                 echo "Starting application on EC2..."
 
-                ssh -o StrictHostKeyChecking=no ubuntu@13.217.50.23 << 'EOF'
-                    pkill -f demo-1.0.0.jar || true
+                ssh -o StrictHostKeyChecking=no \
+                    ubuntu@$EC2_HOST \
+                    'pkill -f "[d]emo-1.0.0.jar" || true
+                     nohup java -jar /opt/app/demo-1.0.0.jar \
+                       > /opt/app/app.log 2>&1 < /dev/null &'
 
-                    nohup java -jar /opt/app/demo-1.0.0.jar \
-                        > /opt/app/app.log 2>&1 &
-                EOF
-
-                echo "Deployment command executed successfully"
+                echo "Deployment commands completed."
             '''
         }
     }
 }
+
     }
 
     post {
