@@ -23,7 +23,7 @@ pipeline {
 
 stage('Deploy to EC2') {
     steps {
-        sshagent(['ssh-keypair-for-test']) {
+        sshagent(['ssh-ubuntu']) {
             sh '''
                 echo "Copying artifact to EC2..."
 
