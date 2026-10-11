@@ -29,7 +29,7 @@ stage('Deploy to EC2') {
 
                 scp -o StrictHostKeyChecking=no \
                     target/demo-1.0.0.jar \
-                    ubuntu@13.217.50.23:/opt/app/
+                    ubuntu@100.24.57.121:/opt/app/
 
                 echo "Starting application on EC2..."
 
