@@ -29,7 +29,7 @@ stage('Deploy to EC2') {
             sh '''
                 set -e
 
-                HOST="ubuntu@100.24.57.121"
+                HOST="ubuntu@13.221.139.54"
                 JAR="target/demo-1.0.0.jar"
 
                 echo "1. Checking SSH connection..."
